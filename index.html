@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mine Sweeper</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body onload="onInit()">
+        <input type="radio" name="radio-level" id="Beginner" value="1" onclick="onResetGameLevel(this)"/> Beginner
+        <input type="radio" name="radio-level" id="Medium" value="2" onclick="onResetGameLevel(this)" />  Medium
+        <input type="radio" name="radio-level" id="Expert" value="3" onclick="onResetGameLevel(this)" />  Expert
+    </div>
+
+    <div oncontextmenu="mouseClick(this, event)" onclick="mouseClick(this, event)"  class="sweeper">
+        <button onclick="startNewGame()">😀</button>
+        <table onmousedown="onMouseD(Event)" class="minefield">
+            <tbody class="minefield-field"> </tbody>
+        </table>
+    </div>
+
+
+    <script src="js/utils.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
