@@ -15,6 +15,40 @@ table {
 .cell {
     width: 40px;
     height: 40px;
+    background-color: rgba(128, 128, 128, 0.452);
+}
+.pressedEmpty{
+    background-color: white;
+}
+.pressed1{
+    background-color: white;
+    color: blue;
+    font-weight: bold;
+}
+.pressed2{
+    background-color: white;
+    color: green;
+    font-weight: bold;
+}
+.pressed3{
+    background-color: white;
+    color: red;
+    font-weight: bold;
+}
+.pressed4{
+    background-color: white;
+    color: purple;
+    font-weight: bold;
+}
+.pressed5{
+    background-color: white;
+    color:chartreuse;
+    font-weight: bold;
+}
+.pressed6{
+    background-color: white;
+    color:brown;
+    font-weight: bold;
 }
 
 .cell img {
