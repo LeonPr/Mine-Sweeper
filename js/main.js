@@ -23,14 +23,17 @@ const gExpert = 12
 const gAddAction = 'add'
 const gRemoveAction = 'remove'
 const gHtmlAction = 'html'
-
+var gRecursion = []
 
 var gMarkedMinesCount
 var gShownFieldsCount
 var firstClick = true
 var gMinesForLevel
 var gLife = 3
-var gHintId = ''
+var gHintId = null
+var gIntervalId
+var gIntervalIdSave
+var gSaveClick = 3
 
 function onInit() {
     gMarkedMinesCount = 0
@@ -43,12 +46,12 @@ function onInit() {
 function startNewGame() {
     gMarkedMinesCount = 0
     gShownFieldsCount = 0
-    gHintId = ''
+    gSaveClick = 3
+    gHintId = null
     firstClick = true
     gLife = 3
     smileyMoods(HAPPY)
-    //const elCell = document.querySelector('.start')
-    //elCell.innerHTML = HAPPY
+    enableHits()
     if (document.getElementById("Beginner").checked) {
         gMinesForLevel = 2
         gLevel.SIZE = gBeginner
@@ -66,12 +69,7 @@ function startNewGame() {
     renderField()
     checkVictory()
 }
-/*function disableContextMenu() {
-    const noContext = document.getElementById("oncontextmenu");
-    noContext.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-    })
-}*/
+
 
 function mouseClick(ele, e) {
     const eleId = ele.id + ''
@@ -145,6 +143,26 @@ function updateFieldsMinesCount() {
     }
 }
 
+function onSaveClick() {
+    if(gSaveClick===0) return
+    const saveArray = []
+    for (var i = 0; i < gField.length; i++) {
+        for (var j = 0; j < gField[0].length; j++) {
+            if (!gField[i][j].isShown && !gField[i][j].isMine) {
+                saveArray.push({i, j})
+            }
+        }
+    }
+    gSaveClick--
+    var randElm = getRandomInt(0, saveArray.length + 1)
+    cellsStyling('title', saveArray[randElm].i, saveArray[randElm].j, `saveBnt`, '', gAddAction)
+    gIntervalIdSave = setInterval(clearSaveClicks, 2000)
+    cellsStyling('.save-button span', saveArray[randElm].i, saveArray[randElm].j, '', 'Ethnocentrism', gAddAction, gSaveClick)
+}
+function clearSaveClicks() {
+    cellsStyling('.saveBnt', 0, 0, `saveBnt`, '', gRemoveAction)
+    clearInterval(gIntervalIdSave)
+}
 
 function onCellClicked(elCell, i, j) {
     if (firstClick) {
@@ -161,8 +179,32 @@ function onCellClicked(elCell, i, j) {
     } else {
         renderCell(i, j, gIsCellMine)
     }
+    if (gHintId) {
+        gIntervalId = setInterval(clearHints, 1000)
+    }
 }
+function clearHints() {
+    const elHints = document.querySelectorAll('.pressedHint')
+    for (var i = 0; i < elHints.length; i++) {
+        const eleId = elHints[i].id + ''
+        const indxI = +eleId.substring(0, eleId.indexOf(','))
+        const indxJ = +eleId.substring(eleId.indexOf(',') + 1)
+        if (!gField[indxI][indxJ].isShown) elHints[i].innerHTML = ''
+        elHints[i].classList.remove('pressedHint')
+    }
+    const eBtn = document.getElementById(`${gHintId}`)
+    eBtn.style.display = 'none'
+    gHintId = null
+    clearInterval(gIntervalId)
+}
+function enableHits() {
+    const elHints = document.querySelectorAll('.hints-button')
+    for (var i = 0; i < elHints.length; i++) {
+        elHints[i].innerHTML = UNHINTCLIKED
+        elHints[i].style.display = 'block'
 
+    }
+}
 function addMines(rowIdx, colIdx) {
     var mineNum = 0
     var randI = -1
@@ -190,101 +232,125 @@ function addMines(rowIdx, colIdx) {
 
 function getMarkNearMines(rowIdx, colIdx, resType) {
     var count = 0
-    console.log('rowIdx F', rowIdx);
-    console.log('colIdx F', colIdx);
+    gRecursion.push(`${rowIdx},${colIdx}`)
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= gField.length) continue
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
-            if (i === rowIdx && j === colIdx){
-                if (!gField[i][j].isMine && resType === resUpdate){
-                    if (gField[i][j].isShown !== true) {
-                        gField[i][j].isShown = true
-                        gShownFieldsCount++
-                    }
-                    if (gField[i][j].minesAroundCount === 0) {
-    
-                        cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
-                    } else {
-                        if (!gField[i][j].isMarked) {
-                            cellsStyling('title', i, j, `pressed${gField[i][j].minesAroundCount}`, gField[i][j].minesAroundCount, gAddAction)
-                        } else {
-                            gShownFieldsCount--
-                        }
-                    }
-                }
-                continue
-            } 
+            if (i === rowIdx && j === colIdx) continue
             if (j < 0 || j >= gField[i].length) continue
             if (gField[i][j].isMine && resType === resCount) {
                 count++
-            } else if (!gField[i][j].isMine && resType === resUpdate) {
-                
+            } else if ((!gField[i][j].isMine && resType === resUpdate) ||
+                (gField[i][j].isMine && resType === resUpdate && gHintId)) {
                 if (gField[i][j].isShown !== true) {
-                    gField[i][j].isShown = true
-                    gShownFieldsCount++
+                    if (!gHintId) {
+                        gField[i][j].isShown = true
+                        gShownFieldsCount++
+                    }
                 }
                 if (gField[i][j].minesAroundCount === 0) {
-
-                    cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
+                    if (!gHintId) {
+                        cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
+                        if (!gRecursion.includes(`${i},${j}`)) getMarkNearMines(i, j, resUpdate)
+                    } else {
+                        if (gField[i][j].isMine) {
+                            cellsStyling('title', rowIdx, colIdx, `pressedHint`, MINE, gAddAction)
+                        } else {
+                            cellsStyling('title', i, j, `pressedHint`, '', gAddAction)
+                        }
+                    }
                 } else {
                     if (!gField[i][j].isMarked) {
-                        cellsStyling('title', i, j, `pressed${gField[i][j].minesAroundCount}`, gField[i][j].minesAroundCount, gAddAction)
+                        if (!gHintId) {
+                            cellsStyling('title', i, j, `pressed${gField[i][j].minesAroundCount}`, gField[i][j].minesAroundCount, gAddAction)
+
+                        } else {
+                            if (gField[i][j].isMine) {
+                                cellsStyling('title', i, j, `pressedHint`, MINE, gAddAction)
+                            } else {
+                                cellsStyling('title', i, j, `pressedHint`, gField[i][j].minesAroundCount, gAddAction)
+                            }
+                        }
                     } else {
                         gShownFieldsCount--
                     }
                 }
+                //end move to new function
             }
         }
     }
     if (resType === 1) {
         return count
     }
+    return
 }
 
-function renderCell(rowIdx, colIdx, isCellMine) {
-    if (gField[rowIdx][colIdx].isShown) return
-    if (gLife === 0){
-        smileyMoods(SAD)
-        return
-    } 
-    if (isCellMine) {
-        if (gLife > 0) {
-            cellsStyling('title', rowIdx, colIdx, ``, MINE, gAddAction)
+function manageMines(rowIdx, colIdx, isCellMine) {
+    if (gLife > 0) {
+        if (!gHintId) {
             gLife--
-            cellsStyling('span', rowIdx, colIdx, ``, MINE, gAddAction, gLife)
+            cellsStyling('title', rowIdx, colIdx, ``, MINE, gAddAction)
+            cellsStyling('h3 span', rowIdx, colIdx, '', 'Ethnocentrism', gAddAction, gLife)
+
         } else {
-            smileyMoods(SAD)
-            const elMines = document.querySelectorAll('.mine')
-            for (var i = 0; i < elMines.length; i++) {
-                elMines[i].innerHTML = MINE
-            }
+            cellsStyling('title', rowIdx, colIdx, `pressedHint`, MINE, gAddAction)
+            cellsStyling('span', rowIdx, colIdx, `pressedHint`, '', gAddAction, gLife)
         }
     } else {
-        gShownFieldsCount++
-        getMarkNearMines(+rowIdx, +colIdx, resUpdate)
-        gField[rowIdx][colIdx].isShown = true
-        if (gField[rowIdx][colIdx].minesAroundCount === 0) {
-            cellsStyling('title',rowIdx, colIdx, 'pressedEmpty', '', gAddAction)
-        } else {
-            cellsStyling('title', rowIdx, colIdx, `pressed${gField[rowIdx][colIdx].minesAroundCount}`, gField[rowIdx][colIdx].minesAroundCount, gAddAction)
+        smileyMoods(SAD)
+        const elMines = document.querySelectorAll('.mine')
+        for (var i = 0; i < elMines.length; i++) {
+            elMines[i].innerHTML = MINE
         }
+    }
+}
+function renderCell(rowIdx, colIdx, isCellMine) {
+    if (gField[rowIdx][colIdx].isShown) return
+    if (gLife === 0) {
+        smileyMoods(SAD)
+        return
+    }
+    if (isCellMine) {
+        manageMines(rowIdx, colIdx, isCellMine)
+    } else {
+        if (!gHintId) gField[rowIdx][colIdx].isShown = true
+        if (gField[rowIdx][colIdx].minesAroundCount === 0) {
+            if (!gHintId) {
+                cellsStyling('title', rowIdx, colIdx, 'pressedEmpty', '', gAddAction)
+            } else {
+                cellsStyling('title', rowIdx, colIdx, 'pressedHint', '', gAddAction)
+            }
+            gRecursion = []
+            getMarkNearMines(+rowIdx, +colIdx, resUpdate)
+        } else {
+            if (!gHintId) {
+                cellsStyling('title', rowIdx, colIdx, `pressed${gField[rowIdx][colIdx].minesAroundCount}`, gField[rowIdx][colIdx].minesAroundCount, gAddAction)
+
+            } else {
+                cellsStyling('title', rowIdx, colIdx, `pressedHint`, gField[rowIdx][colIdx].minesAroundCount, gAddAction)
+                getMarkNearMines(+rowIdx, +colIdx, resUpdate)
+            }
+        }
+
+        gShownFieldsCount++
         checkVictory()
     }
 }
 
 function cellsStyling(selector, rowIdx, colIdx, newClass = '', newHTML = 'Ethnocentrism', classAction, NewTXT = '') {
+
     if (selector === 'title') {
         var elCell = document.querySelector(`[title="Cell: ${rowIdx + 1}, ${colIdx + 1}"]`)
     } else {
         var elCell = document.querySelector(`${selector}`)
     }
-    console.log('rowIdx', rowIdx);
-    console.log('colIdx', colIdx);
-    console.log('elCell', elCell);
+
     if (classAction === gAddAction) {
         if (newClass !== '') elCell.classList.add(`${newClass}`)
         if (newHTML !== 'Ethnocentrism') elCell.innerHTML = newHTML
-        if (NewTXT !== '') elCell.innerHTML = NewTXT
+        if (NewTXT !== '') elCell.innerText = NewTXT
+    } else {
+        elCell.classList.remove(`${newClass}`)
     }
 }
 
@@ -305,7 +371,7 @@ function checkVictory() {
 function onHintsClick(eBtn) {
     if (eBtn.innerHTML === HINTCLIKED) {
         eBtn.innerHTML = UNHINTCLIKED
-        gHintId = ''
+        gHintId = null
     } else {
         eBtn.innerHTML = HINTCLIKED
         gHintId = eBtn.id

@@ -10,17 +10,23 @@ body {
     table {
     margin: auto;
     border-color: aliceblue;
-
-
 }
-
+.hints{
+    text-align: center;
+}
+.hits div{
+    display:inline-block;
+}
 .cell {
     width: 40px;
     height: 40px;
     background-color: rgba(128, 128, 128, 0.452);
 }
+.saveBnt{
+    background-color:orange;
+}
 .pressedHint{
-    background-color: rgb(155, 57, 144);
+    background-color: rgba(143, 75, 135, 0.557);
 }
 .pressedEmpty{
     background-color: white;
@@ -71,3 +77,4 @@ body {
 td{
     border:1px solid  black;
     }
+
