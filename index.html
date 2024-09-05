@@ -7,13 +7,20 @@
     <link rel="stylesheet" href="css/main.css">
 </head>
 <body onload="onInit()">
-        <input type="radio" name="radio-level" id="Beginner" value="1" onclick="onResetGameLevel(this)"/> Beginner
-        <input type="radio" name="radio-level" id="Medium" value="2" onclick="onResetGameLevel(this)" />  Medium
-        <input type="radio" name="radio-level" id="Expert" value="3" onclick="onResetGameLevel(this)" />  Expert
+        <input type="radio" name="radio-level" id="Beginner" value="1" /> Beginner
+        <input type="radio" name="radio-level" id="Medium" value="2"  />  Medium
+        <input type="radio" name="radio-level" id="Expert" value="3"  />  Expert
     </div>
 
     <div  class="sweeper">
-        <button onclick="startNewGame()">😀</button>
+        <button class="start" onclick="startNewGame()">😀</button>
+        <h3 class="lives-count">LIVES: <span>3</span></h3>
+        <div class="hints">
+            <button id="first-hint" onclick="onHintsClick(this)">💿</button>
+            <button id="second-hint" onclick="onHintsClick(this)">💿</button>
+            <button id="third-hint" onclick="onHintsClick(this)">💿</button>
+            <h4 class="hints-label" >Hints👆</h4>
+        </div>
         <table id="1433" class="minefield">
             <tbody class="minefield-field"> </tbody>
         </table>
@@ -21,7 +28,7 @@
     </div>
 
     <footer>
-        <p \br>© 2024 Leon Pri-Mor</p>
+        <p >© 2024 Leon Pri-Mor</p>
     </footer>
     <script src="js/utils.js"></script>
     <script src="js/main.js"></script>

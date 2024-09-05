@@ -4,9 +4,14 @@
 
 const MINE = '🎇'
 const FLAG = '🚩'
+const HAPPY = '😀'
+const SAD = '😣'
+const VICTORY = '😎'
+const HINTCLIKED = '📀'
+const UNHINTCLIKED = '💿'
 
 const gField = []
-const gLevel = { SIZE: 4, MINES: 2 }
+const gLevel = { SIZE: 8, MINES: 14 }
 const gGame = { isOn: true, shownCount: 0, markedCount: 0, secsPassed: 0 }
 
 const gIsCellMine = false
@@ -15,25 +20,35 @@ const resUpdate = 2
 const gBeginner = 4
 const gMedium = 8
 const gExpert = 12
+const gAddAction = 'add'
+const gRemoveAction = 'remove'
+const gHtmlAction = 'html'
 
 
 var gMarkedMinesCount
 var gShownFieldsCount
 var firstClick = true
 var gMinesForLevel
+var gLife = 3
+var gHintId = ''
 
 function onInit() {
     gMarkedMinesCount = 0
     gShownFieldsCount = 0
-    document.getElementById("Beginner").checked = true;
-    gMinesForLevel=2
+    document.getElementById("Medium").checked = true;
+    gMinesForLevel = 14
     createField()
     renderField()
 }
 function startNewGame() {
     gMarkedMinesCount = 0
     gShownFieldsCount = 0
+    gHintId = ''
     firstClick = true
+    gLife = 3
+    smileyMoods(HAPPY)
+    //const elCell = document.querySelector('.start')
+    //elCell.innerHTML = HAPPY
     if (document.getElementById("Beginner").checked) {
         gMinesForLevel = 2
         gLevel.SIZE = gBeginner
@@ -51,12 +66,12 @@ function startNewGame() {
     renderField()
     checkVictory()
 }
-function disableContextMenu() {
+/*function disableContextMenu() {
     const noContext = document.getElementById("oncontextmenu");
     noContext.addEventListener("contextmenu", (e) => {
         e.preventDefault();
     })
-}
+}*/
 
 function mouseClick(ele, e) {
     const eleId = ele.id + ''
@@ -183,20 +198,17 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
             if (gField[i][j].isMine && resType === resCount) {
                 count++
             } else if (!gField[i][j].isMine && resType === resUpdate) {
-                const elCell = document.querySelector(`[title="Cell: ${i + 1}, ${j + 1}"]`)
-                if(gField[i][j].isShown !== true){
+                
+                if (gField[i][j].isShown !== true) {
                     gField[i][j].isShown = true
                     gShownFieldsCount++
                 }
-
                 if (gField[i][j].minesAroundCount === 0) {
-                    elCell.classList.add('pressedEmpty')
-                    elCell.innerHTML = ''
+                    cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
                 } else {
                     if (!gField[i][j].isMarked) {
-                        elCell.classList.add(`pressed${gField[i][j].minesAroundCount}`)
-                        elCell.innerHTML = gField[i][j].minesAroundCount
-                    }else{
+                        cellsStyling('title', i, j, `pressed${gField[i][j].minesAroundCount}`, gField[i][j].minesAroundCount, gAddAction)
+                    } else {
                         gShownFieldsCount--
                     }
                 }
@@ -210,34 +222,66 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
 
 function renderCell(rowIdx, colIdx, isCellMine) {
     if (gField[rowIdx][colIdx].isShown) return
+    if (gLife === 0) return
     if (isCellMine) {
-        const elMines = document.querySelectorAll('.mine')
-        for (var i = 0; i < elMines.length; i++) {
-            elMines[i].innerHTML = MINE
+        if (gLife > 0) {
+            cellsStyling('title', rowIdx, colIdx, ``, MINE, gAddAction)
+            gLife--
+            cellsStyling('span', rowIdx, colIdx, ``, MINE, gAddAction, gLife)
+        } else {
+            smileyMoods(SAD)
+            const elMines = document.querySelectorAll('.mine')
+            for (var i = 0; i < elMines.length; i++) {
+                elMines[i].innerHTML = MINE
+            }
         }
     } else {
         gShownFieldsCount++
         getMarkNearMines(+rowIdx, +colIdx, resUpdate)
-        const elCell = document.querySelector(`[title="Cell: ${rowIdx + 1}, ${colIdx + 1}"]`)
         gField[rowIdx][colIdx].isShown = true
         if (gField[rowIdx][colIdx].minesAroundCount === 0) {
-            elCell.innerHTML = ''
-            elCell.classList.add('pressedEmpty')
+            cellsStyling('title',rowIdx, colIdx, 'pressedEmpty', '', gAddAction)
         } else {
-            elCell.classList.add(`pressed${gField[rowIdx][colIdx].minesAroundCount}`)
-            elCell.innerHTML = gField[rowIdx][colIdx].minesAroundCount
+            cellsStyling('title', rowIdx, colIdx, `pressed${gField[rowIdx][colIdx].minesAroundCount}`, gField[rowIdx][colIdx].minesAroundCount, gAddAction)
         }
         checkVictory()
     }
+}
+
+function cellsStyling(selector, rowIdx, colIdx, newClass = '', newHTML = 'Ethnocentrism', classAction, NewTXT = '') {
+    if (selector === 'title') {
+        var elCell = document.querySelector(`[title="Cell: ${rowIdx + 1}, ${colIdx + 1}"]`)
+    } else {
+        var elCell = document.querySelector(`${selector}`)
+    }
+    if (classAction === gAddAction) {
+        if (newClass !== '') elCell.classList.add(`${newClass}`)
+        if (newHTML !== 'Ethnocentrism') elCell.innerHTML = newHTML
+        if (NewTXT !== '') elCell.innerHTML = NewTXT
+    }
+}
+
+function smileyMoods(mood) {
+    const elCell = document.querySelector('.start')
+    elCell.innerHTML = mood
 }
 function checkVictory() {
     if (gMinesForLevel === gMarkedMinesCount && gShownFieldsCount === (Number(gLevel.SIZE) ** 2 - gMinesForLevel)) {
         const elCell = document.querySelector('.victory')
         elCell.style.display = 'block'
-    }else if(firstClick){
+        smileyMoods(VICTORY)
+    } else if (firstClick) {
         const elCell = document.querySelector('.victory')
         elCell.style.display = 'none'
     }
-
+}
+function onHintsClick(eBtn) {
+    if (eBtn.innerHTML === HINTCLIKED) {
+        eBtn.innerHTML = UNHINTCLIKED
+        gHintId = ''
+    } else {
+        eBtn.innerHTML = HINTCLIKED
+        gHintId = eBtn.id
+    }
 }
 

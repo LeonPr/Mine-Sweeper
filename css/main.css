@@ -5,11 +5,13 @@ body {
     text-align: center;
     cursor: pointer;
     color: black;
+ 
 }
-
-table {
+    table {
     margin: auto;
     border-color: aliceblue;
+
+
 }
 
 .cell {
