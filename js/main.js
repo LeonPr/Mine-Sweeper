@@ -190,10 +190,30 @@ function addMines(rowIdx, colIdx) {
 
 function getMarkNearMines(rowIdx, colIdx, resType) {
     var count = 0
+    console.log('rowIdx F', rowIdx);
+    console.log('colIdx F', colIdx);
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= gField.length) continue
         for (var j = colIdx - 1; j <= colIdx + 1; j++) {
-            if (i === rowIdx && j === colIdx) continue
+            if (i === rowIdx && j === colIdx){
+                if (!gField[i][j].isMine && resType === resUpdate){
+                    if (gField[i][j].isShown !== true) {
+                        gField[i][j].isShown = true
+                        gShownFieldsCount++
+                    }
+                    if (gField[i][j].minesAroundCount === 0) {
+    
+                        cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
+                    } else {
+                        if (!gField[i][j].isMarked) {
+                            cellsStyling('title', i, j, `pressed${gField[i][j].minesAroundCount}`, gField[i][j].minesAroundCount, gAddAction)
+                        } else {
+                            gShownFieldsCount--
+                        }
+                    }
+                }
+                continue
+            } 
             if (j < 0 || j >= gField[i].length) continue
             if (gField[i][j].isMine && resType === resCount) {
                 count++
@@ -204,6 +224,7 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
                     gShownFieldsCount++
                 }
                 if (gField[i][j].minesAroundCount === 0) {
+
                     cellsStyling('title', i, j, `pressedEmpty`, '', gAddAction)
                 } else {
                     if (!gField[i][j].isMarked) {
@@ -222,7 +243,10 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
 
 function renderCell(rowIdx, colIdx, isCellMine) {
     if (gField[rowIdx][colIdx].isShown) return
-    if (gLife === 0) return
+    if (gLife === 0){
+        smileyMoods(SAD)
+        return
+    } 
     if (isCellMine) {
         if (gLife > 0) {
             cellsStyling('title', rowIdx, colIdx, ``, MINE, gAddAction)
@@ -254,6 +278,9 @@ function cellsStyling(selector, rowIdx, colIdx, newClass = '', newHTML = 'Ethnoc
     } else {
         var elCell = document.querySelector(`${selector}`)
     }
+    console.log('rowIdx', rowIdx);
+    console.log('colIdx', colIdx);
+    console.log('elCell', elCell);
     if (classAction === gAddAction) {
         if (newClass !== '') elCell.classList.add(`${newClass}`)
         if (newHTML !== 'Ethnocentrism') elCell.innerHTML = newHTML

@@ -19,6 +19,9 @@ body {
     height: 40px;
     background-color: rgba(128, 128, 128, 0.452);
 }
+.pressedHint{
+    background-color: rgb(155, 57, 144);
+}
 .pressedEmpty{
     background-color: white;
 }
