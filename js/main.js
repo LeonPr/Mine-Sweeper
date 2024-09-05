@@ -17,34 +17,39 @@ const gMedium = 8
 const gExpert = 12
 
 
-var gMinesCount
+var gMarkedMinesCount
+var gShownFieldsCount
 var firstClick = true
+var gMinesForLevel
 
 function onInit() {
-    gMinesCount = 0
+    gMarkedMinesCount = 0
+    gShownFieldsCount = 0
     document.getElementById("Beginner").checked = true;
+    gMinesForLevel=2
     createField()
-    /*addMines()                 first click free
-    updateFieldsMinesCount()*/
     renderField()
 }
 function startNewGame() {
-    gMinesCount = 0
+    gMarkedMinesCount = 0
+    gShownFieldsCount = 0
     firstClick = true
     if (document.getElementById("Beginner").checked) {
+        gMinesForLevel = 2
         gLevel.SIZE = gBeginner
-        gLevel.MINES = 2
+        gLevel.MINES = gMinesForLevel
     } else if (document.getElementById("Medium").checked) {
+        gMinesForLevel = 14
         gLevel.SIZE = gMedium
-        gLevel.MINES = 14
+        gLevel.MINES = gMinesForLevel
     } else if (document.getElementById("Expert").checked) {
+        gMinesForLevel = 32
         gLevel.SIZE = gExpert
-        gLevel.MINES = 32
+        gLevel.MINES = gMinesForLevel
     }
     createField()
-    /*addMines()                             first click free
-    updateFieldsMinesCount()*/
     renderField()
+    checkVictory()
 }
 function disableContextMenu() {
     const noContext = document.getElementById("oncontextmenu");
@@ -54,35 +59,25 @@ function disableContextMenu() {
 }
 
 function mouseClick(ele, e) {
-
     const eleId = ele.id + ''
     const indxI = +eleId.substring(0, eleId.indexOf(','))
     const indxJ = +eleId.substring(eleId.indexOf(',') + 1)
     if (gField[indxI][indxJ].isShown) return
-
-    /*if (e.type == 'click') {
-         //alert('Left Click Detected!');
-     }*/
     if (e.type == 'contextmenu') {
-        if(ele.innerHTML === FLAG){
+        if (ele.innerHTML === FLAG) {
             ele.innerHTML = ''
-        }else{
+            gField[indxI][indxJ].isMarked = false
+            gMarkedMinesCount--
+        } else {
             ele.innerHTML = FLAG
+            gField[indxI][indxJ].isMarked = true
+            gMarkedMinesCount++
+            checkVictory()
         }
-        
-        //alert('Right Click Detected!');
-        //onCellClickedRight(ele)
     }
-
-}
-
-function onResetGameLevel(elbtn) {
-
 }
 
 function createField() {
-    //const mineField = []
-
     for (var i = 0; i < gLevel.SIZE; i++) {
         gField[i] = []
         for (var j = 0; j < gLevel.SIZE; j++) {
@@ -96,6 +91,7 @@ function createField() {
         }
     }
 }
+
 function renderField() {
     var strHTML = ''
 
@@ -111,7 +107,7 @@ function renderField() {
             if (cell.isMine) {
                 className += ' mine'
             }
-            // Add a seat title
+            // Add a Cell title
             const title = `Cell: ${i + 1}, ${j + 1}`
 
             strHTML += `\t<td title="${title}" id="${i}, ${j}" class="cell ${className}" 
@@ -128,7 +124,7 @@ function updateFieldsMinesCount() {
     for (var i = 0; i < gField.length; i++) {
         for (var j = 0; j < gField[0].length; j++) {
             if (!gField[i][j].isMine) {
-                gField[i][j].minesAroundCount = getNearMines(i, j, resCount)
+                gField[i][j].minesAroundCount = getMarkNearMines(i, j, resCount)
             }
         }
     }
@@ -142,8 +138,8 @@ function onCellClicked(elCell, i, j) {
         updateFieldsMinesCount()
         renderField()
     }
-    
-    if(elCell.innerHTML===FLAG) return
+
+    if (elCell.innerHTML === FLAG) return
     if (gField[i][j].isMine) {
         renderCell(i, j, !gIsCellMine)
         gGame.isOn = false
@@ -176,10 +172,8 @@ function addMines(rowIdx, colIdx) {
     }
 }
 
-function onCellMarked(elCell) {
-    //todo: right click check
-}
-function getNearMines(rowIdx, colIdx, resType) {
+
+function getMarkNearMines(rowIdx, colIdx, resType) {
     var count = 0
     for (var i = rowIdx - 1; i <= rowIdx + 1; i++) {
         if (i < 0 || i >= gField.length) continue
@@ -190,13 +184,21 @@ function getNearMines(rowIdx, colIdx, resType) {
                 count++
             } else if (!gField[i][j].isMine && resType === resUpdate) {
                 const elCell = document.querySelector(`[title="Cell: ${i + 1}, ${j + 1}"]`)
-                gField[i][j].isShown = true
+                if(gField[i][j].isShown !== true){
+                    gField[i][j].isShown = true
+                    gShownFieldsCount++
+                }
+
                 if (gField[i][j].minesAroundCount === 0) {
                     elCell.classList.add('pressedEmpty')
                     elCell.innerHTML = ''
                 } else {
-                    elCell.classList.add(`pressed${gField[i][j].minesAroundCount}`)
-                    elCell.innerHTML = gField[i][j].minesAroundCount
+                    if (!gField[i][j].isMarked) {
+                        elCell.classList.add(`pressed${gField[i][j].minesAroundCount}`)
+                        elCell.innerHTML = gField[i][j].minesAroundCount
+                    }else{
+                        gShownFieldsCount--
+                    }
                 }
             }
         }
@@ -204,7 +206,6 @@ function getNearMines(rowIdx, colIdx, resType) {
     if (resType === 1) {
         return count
     }
-
 }
 
 function renderCell(rowIdx, colIdx, isCellMine) {
@@ -215,16 +216,28 @@ function renderCell(rowIdx, colIdx, isCellMine) {
             elMines[i].innerHTML = MINE
         }
     } else {
+        gShownFieldsCount++
+        getMarkNearMines(+rowIdx, +colIdx, resUpdate)
         const elCell = document.querySelector(`[title="Cell: ${rowIdx + 1}, ${colIdx + 1}"]`)
         gField[rowIdx][colIdx].isShown = true
         if (gField[rowIdx][colIdx].minesAroundCount === 0) {
             elCell.innerHTML = ''
             elCell.classList.add('pressedEmpty')
-            getNearMines(rowIdx, colIdx, resUpdate)
         } else {
             elCell.classList.add(`pressed${gField[rowIdx][colIdx].minesAroundCount}`)
-            getNearMines(rowIdx, colIdx, resUpdate)
+            elCell.innerHTML = gField[rowIdx][colIdx].minesAroundCount
         }
+        checkVictory()
     }
+}
+function checkVictory() {
+    if (gMinesForLevel === gMarkedMinesCount && gShownFieldsCount === (Number(gLevel.SIZE) ** 2 - gMinesForLevel)) {
+        const elCell = document.querySelector('.victory')
+        elCell.style.display = 'block'
+    }else if(firstClick){
+        const elCell = document.querySelector('.victory')
+        elCell.style.display = 'none'
+    }
+
 }
 
