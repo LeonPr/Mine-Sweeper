@@ -23,6 +23,7 @@ const gExpert = 12
 const gAddAction = 'add'
 const gRemoveAction = 'remove'
 const gHtmlAction = 'html'
+const gUndo = []
 var gRecursion = []
 
 var gMarkedMinesCount
@@ -33,7 +34,9 @@ var gLife = 3
 var gHintId = null
 var gIntervalId
 var gIntervalIdSave
+var gIntervalIdTime
 var gSaveClick = 3
+var gStartTime
 
 function onInit() {
     gMarkedMinesCount = 0
@@ -46,10 +49,13 @@ function onInit() {
 function startNewGame() {
     gMarkedMinesCount = 0
     gShownFieldsCount = 0
-    gSaveClick = 3
     gHintId = null
     firstClick = true
+    gGame.secsPassed = 0
+    gSaveClick = 3
+    cellsStyling('.save-button span', 0, 0, '', 'Ethnocentrism', gAddAction, gSaveClick)
     gLife = 3
+    cellsStyling('h3 span', 0, 0, '', 'Ethnocentrism', gAddAction, gLife)
     smileyMoods(HAPPY)
     enableHits()
     if (document.getElementById("Beginner").checked) {
@@ -68,8 +74,30 @@ function startNewGame() {
     createField()
     renderField()
     checkVictory()
+    clearInterval(gIntervalIdTime)
+
+    document.getElementById("timer").innerHTML = 'Timer: 00:00:00'
+    document.getElementById("marked").innerHTML = 'Marked: ' + 0
+    document.getElementById("opened").innerHTML = 'Opened: ' + 0
 }
 
+
+function updateStopwatch() {
+    var currentTime = new Date().getTime();
+    var elapsedTime = currentTime - gStartTime;
+    var seconds = Math.floor(elapsedTime / 1000) % 60;
+    var minutes = Math.floor(elapsedTime / 1000 / 60) % 60;
+    var hours = Math.floor(elapsedTime / 1000 / 60 / 60);
+    var displayTime = pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
+    document.getElementById("timer").innerHTML = 'Timer: ' + displayTime;
+    gGame.secsPassed++
+    document.getElementById("marked").innerHTML = 'Marked: ' + gMarkedMinesCount
+    document.getElementById("opened").innerHTML = 'Opened: ' + gShownFieldsCount
+}
+
+function pad(number) {
+    return (number < 10 ? "0" : "") + number;
+}
 
 function mouseClick(ele, e) {
     const eleId = ele.id + ''
@@ -87,6 +115,8 @@ function mouseClick(ele, e) {
             gMarkedMinesCount++
             checkVictory()
         }
+        gGame.markedCount = gMarkedMinesCount
+        
     }
 }
 
@@ -144,12 +174,12 @@ function updateFieldsMinesCount() {
 }
 
 function onSaveClick() {
-    if(gSaveClick===0) return
+    if (gSaveClick === 0) return
     const saveArray = []
     for (var i = 0; i < gField.length; i++) {
         for (var j = 0; j < gField[0].length; j++) {
             if (!gField[i][j].isShown && !gField[i][j].isMine) {
-                saveArray.push({i, j})
+                saveArray.push({ i, j })
             }
         }
     }
@@ -170,6 +200,8 @@ function onCellClicked(elCell, i, j) {
         addMines(i, j)
         updateFieldsMinesCount()
         renderField()
+        gStartTime = new Date().getTime()
+        gIntervalIdTime = setInterval(updateStopwatch, 500)
     }
 
     if (elCell.innerHTML === FLAG) return
@@ -201,7 +233,7 @@ function enableHits() {
     const elHints = document.querySelectorAll('.hints-button')
     for (var i = 0; i < elHints.length; i++) {
         elHints[i].innerHTML = UNHINTCLIKED
-        elHints[i].style.display = 'block'
+        elHints[i].style.display = 'inline-block'
 
     }
 }
@@ -254,7 +286,7 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
                         if (!gRecursion.includes(`${i},${j}`)) getMarkNearMines(i, j, resUpdate)
                     } else {
                         if (gField[i][j].isMine) {
-                            cellsStyling('title', rowIdx, colIdx, `pressedHint`, MINE, gAddAction)
+                            cellsStyling('title', i, j, `pressedHint`, MINE, gAddAction)
                         } else {
                             cellsStyling('title', i, j, `pressedHint`, '', gAddAction)
                         }
@@ -275,7 +307,7 @@ function getMarkNearMines(rowIdx, colIdx, resType) {
                         gShownFieldsCount--
                     }
                 }
-                //end move to new function
+                gGame.shownCount = gShownFieldsCount
             }
         }
     }
@@ -308,6 +340,7 @@ function renderCell(rowIdx, colIdx, isCellMine) {
     if (gField[rowIdx][colIdx].isShown) return
     if (gLife === 0) {
         smileyMoods(SAD)
+        clearInterval(gIntervalIdTime)
         return
     }
     if (isCellMine) {
@@ -363,6 +396,7 @@ function checkVictory() {
         const elCell = document.querySelector('.victory')
         elCell.style.display = 'block'
         smileyMoods(VICTORY)
+        clearInterval(gIntervalIdTime)
     } else if (firstClick) {
         const elCell = document.querySelector('.victory')
         elCell.style.display = 'none'
@@ -377,4 +411,3 @@ function onHintsClick(eBtn) {
         gHintId = eBtn.id
     }
 }
-

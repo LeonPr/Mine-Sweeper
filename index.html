@@ -13,8 +13,11 @@
     </div>
 
     <div  class="sweeper">
+        <label id="marked" style="color: red; font-weight: bold;">Marked 0</label>
         <button class="start" onclick="startNewGame()">😀</button>
+        <label id="opened" style="color: red; font-weight: bold;">Opened 0</label>
         <h3 class="lives-count">LIVES: <span>3</span></h3>
+        <p id="timer" style="color: rgb(23, 99, 99); font-weight: bold;">Timer: 00:00:00</p>
         <div  class="hints">
             <button  class="hints-button" id="first-hint" onclick="onHintsClick(this)">💿</button>
             <button  class="hints-button" id="second-hint" onclick="onHintsClick(this)">💿</button>
